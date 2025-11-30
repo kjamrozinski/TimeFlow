@@ -18,6 +18,7 @@ function App() {
   const [archive, setArchive] = useState([]);
   const [location, setLocation] = useState(null);
   const [weather, setWeather] = useState(null);
+  const [showCompletedPanel, setShowCompletedPanel] = useState(false);
 
   // Sprawdzaj lokalizację co 10 minut
   useEffect(() => {
@@ -111,12 +112,13 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setView('login');
-    setTasks([]);
-    setArchive([]);
-  };
+  const handleLogout = () => {
+    setUser(null);
+    setView('login');
+    setTasks([]);
+    setArchive([]);
+    setShowCompletedPanel(false);
+  };
 
   // itd... rozwiń według potrzeb
 
@@ -185,9 +187,19 @@ function App() {
       <main className="max-w-2xl mx-auto p-4">
         <Weather weather={weather} location={location} setLocation={setLocation} />
         <Quote />
-        <DailySummary tasks={tasks} />
-        <TaskList userNick={user.nick} tasks={tasks} setTasks={setTasks} setArchive={setArchive} />
-
+        <DailySummary
+          tasks={tasks}
+          showCompleted={showCompletedPanel}
+          onToggleCompleted={() => setShowCompletedPanel(prev => !prev)}
+        />
+        <TaskList
+          userNick={user.nick}
+          tasks={tasks}
+          setTasks={setTasks}
+          setArchive={setArchive}
+          showCompleted={showCompletedPanel}
+          onToggleCompleted={() => setShowCompletedPanel(prev => !prev)}
+        />
       </main>
     </div>
   );

@@ -3,7 +3,14 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000';
 
-function TaskList({ userNick, tasks = [], setTasks, setArchive }) {
+function TaskList({
+  userNick,
+  tasks = [],
+  setTasks,
+  setArchive,
+  showCompleted = false,
+  onToggleCompleted = () => {},
+}) {
   // Stany aplikacji
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -115,6 +122,10 @@ function TaskList({ userNick, tasks = [], setTasks, setArchive }) {
       });
   };
 
+  const revertTaskCompletion = (id) => {
+    handleUpdateTask(id, { completed: false });
+  };
+
   const handleArchiveTask = (task) => {
     setArchive(prev => [...prev, task]);
     setTasks(prev => prev.filter(t => t.id !== task.id));
@@ -192,25 +203,28 @@ function TaskList({ userNick, tasks = [], setTasks, setArchive }) {
     });
   }
 
+  const activeFilteredTasks = filteredTasks.filter(task => !task.completed);
+  const completedFilteredTasks = filteredTasks.filter(task => task.completed);
+
   // Grupowanie zadań według terminu (zaległe, na dziś, na jutro, przyszłe)
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   const dayAfterTomorrow = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
 
-  const overdueTasks = filteredTasks.filter(task =>
-    !task.completed && task.deadline && new Date(task.deadline) < today
+  const overdueTasks = activeFilteredTasks.filter(task =>
+    task.deadline && new Date(task.deadline) < today
   );
-  const todayTasks = filteredTasks.filter(task =>
+  const todayTasks = activeFilteredTasks.filter(task =>
     task.deadline && new Date(task.deadline) >= today && new Date(task.deadline) < tomorrow
   );
-  const tomorrowTasks = filteredTasks.filter(task =>
+  const tomorrowTasks = activeFilteredTasks.filter(task =>
     task.deadline && new Date(task.deadline) >= tomorrow && new Date(task.deadline) < dayAfterTomorrow
   );
-  const futureTasks = filteredTasks.filter(task =>
+  const futureTasks = activeFilteredTasks.filter(task =>
     task.deadline && new Date(task.deadline) >= dayAfterTomorrow
   );
-  const noDeadlineTasks = filteredTasks.filter(task => !task.deadline);
+  const noDeadlineTasks = activeFilteredTasks.filter(task => !task.deadline);
   if (noDeadlineTasks.length > 0) {
     futureTasks.push(...noDeadlineTasks);
   }
@@ -844,6 +858,65 @@ function TaskList({ userNick, tasks = [], setTasks, setArchive }) {
           <p className="text-sm text-gray-500">Brak przyszłych zadań.</p>
         )}
       </section>
+
+      {/* Sekcja wykonanych zadan */}
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-lg">Wykonane zadania ({completedFilteredTasks.length})</h3>
+          <button
+            onClick={onToggleCompleted}
+            className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            {showCompleted ? 'Ukryj' : 'Pokaz'}
+          </button>
+        </div>
+        {showCompleted && (
+          completedFilteredTasks.length > 0 ? (
+            <ul className="space-y-2">
+              {completedFilteredTasks.map(task => (
+                <li key={task.id} className="p-3 rounded bg-white dark:bg-gray-800 shadow border border-gray-100 dark:border-gray-700">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">
+                        {task.content || task.text}
+                      </div>
+                      {task.description && <div className="text-sm text-gray-600 dark:text-gray-300">{task.description}</div>}
+                      <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 space-y-1">
+                        <div>Termin: {task.deadline ? task.deadline.slice(0, 10) : 'Brak'}</div>
+                        <div>Priorytet: {task.priority || 'Low'}</div>
+                        <div>Typ: {task.type || 'Inne'}</div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => revertTaskCompletion(task.id)}
+                        className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                      >
+                        Cofnij ukonczenie
+                      </button>
+                      <button
+                        onClick={() => handleArchiveTask(task)}
+                        className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                      >
+                        Archiwizuj
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                      >
+                        Usun
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500">Brak wykonanych zadan spelniajacych filtry.</p>
+          )
+        )}
+      </section>
+
     </div>
   );
 }
