@@ -321,7 +321,7 @@ function App() {
             <span>TimeFlow</span>
           </div>
           <p className="text-sm uppercase tracking-[0.4em] text-slate-500 dark:text-slate-300">
-            Harmonogram • mindfulness • produktywność
+            PLANNING • MINDFULNESS • PRODUCTIVITY
           </p>
           <nav className="flex flex-wrap justify-center gap-3 text-sm">
             <button className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60" onClick={() => setView("settings")}>Ustawienia</button>

@@ -25,92 +25,102 @@ const Settings = ({ user, onBack, preferences, onUpdatePreferences }) => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Ustawienia</h2>
-        <button className="px-4 py-2 rounded bg-gray-200 dark:bg-zinc-700" onClick={onBack}>
-          Powrot
-        </button>
-      </header>
-
-      <section className="p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow space-y-3">
-        <h3 className="text-lg font-semibold">Profil</h3>
-        <form onSubmit={handleSave} className="space-y-3">
-          <label className="block">
-            <span className="text-sm text-gray-600 dark:text-gray-300">Nick</span>
-            <input
-              type="text"
-              className="w-full mt-1 p-2 rounded border bg-white dark:bg-zinc-700"
-              value={nick}
-              onChange={(e) => setNick(e.target.value)}
-            />
-          </label>
-          <button className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
-            Zapisz zmiany
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 p-6 transition-colors">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <header className="flex items-center justify-between bg-white/70 dark:bg-slate-900/70 rounded-3xl px-6 py-4 shadow border border-white/60 dark:border-slate-800">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">
+              Control Center
+            </p>
+            <h2 className="text-2xl font-bold">Ustawienia</h2>
+          </div>
+          <button
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold shadow"
+            onClick={onBack}
+          >
+            Powrót
           </button>
-          {msg && <p className="text-green-600 text-sm">{msg}</p>}
-        </form>
-      </section>
+        </header>
 
-      <section className="p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow space-y-4">
-        <h3 className="text-lg font-semibold">Personalizacja</h3>
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600 dark:text-gray-300">Motyw aplikacji</p>
-          <div className="flex gap-4">
-            {["light", "dark"].map((mode) => (
-              <label key={mode} className="flex items-center gap-2 text-sm">
+        <section className="p-5 bg-white dark:bg-slate-900 rounded-3xl shadow border border-white/60 dark:border-slate-800 space-y-3">
+          <h3 className="text-lg font-semibold">Profil</h3>
+          <form onSubmit={handleSave} className="space-y-3">
+            <label className="block">
+              <span className="text-sm text-gray-600 dark:text-gray-300">Nick</span>
+              <input
+                type="text"
+                className="w-full mt-1 p-2 rounded border bg-white dark:bg-slate-800"
+                value={nick}
+                onChange={(e) => setNick(e.target.value)}
+              />
+            </label>
+            <button className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow">
+              Zapisz zmiany
+            </button>
+            {msg && <p className="text-green-600 text-sm">{msg}</p>}
+          </form>
+        </section>
+
+        <section className="p-5 bg-white dark:bg-slate-900 rounded-3xl shadow border border-white/60 dark:border-slate-800 space-y-4">
+          <h3 className="text-lg font-semibold">Personalizacja</h3>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600 dark:text-gray-300">Motyw aplikacji</p>
+            <div className="flex flex-wrap gap-4">
+              {["light", "dark"].map((mode) => (
+                <label
+                  key={mode}
+                  className={`flex items-center gap-2 text-sm px-3 py-2 rounded-2xl border ${
+                    preferences.theme === mode
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/40"
+                      : "border-gray-300 dark:border-slate-700"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="theme"
+                    value={mode}
+                    checked={preferences.theme === mode}
+                    onChange={handleThemeChange}
+                  />
+                  {mode === "light" ? "Tryb jasny" : "Tryb ciemny"}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3">
+            {[
+              { key: "showWeather", label: "Pokazuj panel pogody" },
+              { key: "showQuote", label: "Pokazuj panel z cytatem dnia" },
+              { key: "autoExpandCompleted", label: "Domyślnie pokazuj wykonane zadania" }
+            ].map((item) => (
+              <label
+                key={item.key}
+                className="flex items-center gap-3 p-3 rounded-2xl border border-gray-200 dark:border-slate-700"
+              >
                 <input
-                  type="radio"
-                  name="theme"
-                  value={mode}
-                  checked={preferences.theme === mode}
-                  onChange={handleThemeChange}
+                  type="checkbox"
+                  checked={preferences[item.key]}
+                  onChange={() => handleToggle(item.key)}
                 />
-                {mode === "light" ? "Tryb jasny" : "Tryb ciemny"}
+                <span className="text-sm">{item.label}</span>
               </label>
             ))}
           </div>
-        </div>
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={preferences.showWeather}
-              onChange={() => handleToggle("showWeather")}
-            />
-            Pokazuj panel pogody
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={preferences.showQuote}
-              onChange={() => handleToggle("showQuote")}
-            />
-            Pokazuj panel z cytatem dnia
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={preferences.autoExpandCompleted}
-              onChange={() => handleToggle("autoExpandCompleted")}
-            />
-            Domyslnie pokazuj wykonane zadania
-          </label>
-        </div>
-      </section>
+        </section>
 
-      <section className="p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow space-y-3">
-        <h3 className="text-lg font-semibold">Zarzadzanie danymi</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          Zresetuj lokalne dane, aby wyczyscic cache przegladarki i ustawienia zapisane na tym urzadzeniu.
-        </p>
-        <button
-          className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-          onClick={handleResetLocal}
-        >
-          Resetuj lokalne dane
-        </button>
-      </section>
+        <section className="p-5 bg-white dark:bg-slate-900 rounded-3xl shadow border border-white/60 dark:border-slate-800 space-y-3">
+          <h3 className="text-lg font-semibold">Zarządzanie danymi</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Zresetuj lokalne dane, aby wyczyścić cache przeglądarki i ustawienia zapisane na tym urządzeniu.
+          </p>
+          <button
+            className="px-4 py-2 rounded-full bg-red-600 text-white hover:bg-red-700"
+            onClick={handleResetLocal}
+          >
+            Resetuj lokalne dane
+          </button>
+        </section>
+      </div>
     </div>
   );
 };
