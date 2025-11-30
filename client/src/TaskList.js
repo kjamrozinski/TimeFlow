@@ -863,13 +863,12 @@ function TaskList({
       <section className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-bold text-lg">Wykonane zadania ({completedFilteredTasks.length})</h3>
-          <button
-            onClick={onToggleCompleted}
-            className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            {showCompleted ? 'Ukryj' : 'Pokaz'}
-          </button>
         </div>
+        {!showCompleted && (
+          <p className="text-xs text-gray-500 mb-2">
+            Uzyj przycisku w sekcji Bilans dnia, aby pokazywac lub ukrywac wykonane zadania.
+          </p>
+        )}
         {showCompleted && (
           completedFilteredTasks.length > 0 ? (
             <ul className="space-y-2">

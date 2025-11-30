@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Login from "./Login";
 import Register from "./Register";
 import ResetPassword from "./ResetPassword";
@@ -122,15 +122,6 @@ function App() {
 
   // itd... rozwiń według potrzeb
 
-  if (!user) {
-    if (view === "login")
-      return <Login onLogin={handleLogin} onSwitch={() => setView("register")} onReset={() => setView("reset")} />;
-    if (view === "register")
-      return <Register onRegister={handleRegister} onSwitch={() => setView("login")} />;
-    if (view === "reset")
-      return <ResetPassword onReset={handleResetPassword} onSwitch={() => setView("login")} />;
-  }
-
   const handleRestoreTask = (taskId) => {
     setArchive(prevArchive => {
       const taskToRestore = prevArchive.find(task => task.id === taskId);
@@ -160,6 +151,26 @@ function App() {
     setArchive([]);
   };
 
+  const quickStats = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const active = tasks.filter(task => !task.completed).length;
+    const overdue = tasks.filter(
+      task => !task.completed && task.deadline && new Date(task.deadline) < today
+    ).length;
+    const completed = tasks.filter(task => task.completed).length;
+    return { active, overdue, completed };
+  }, [tasks]);
+
+  if (!user) {
+    if (view === "login")
+      return <Login onLogin={handleLogin} onSwitch={() => setView("register")} onReset={() => setView("reset")} />;
+    if (view === "register")
+      return <Register onRegister={handleRegister} onSwitch={() => setView("login")} />;
+    if (view === "reset")
+      return <ResetPassword onReset={handleResetPassword} onSwitch={() => setView("login")} />;
+  }
+
   if (view === "settings") return <Settings user={user} onBack={() => setView("dashboard")} />;
   if (view === "archive") {
     return (
@@ -176,30 +187,55 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-white transition-colors">
-      <header className="p-4 flex justify-between items-center">
-        <span className="font-bold text-xl">TimeFlow</span>
-        <nav>
-          <button className="mx-2" onClick={() => setView("settings")}>Ustawienia</button>
-          <button className="mx-2" onClick={() => setView("archive")}>Archiwum</button>
-          <button className="mx-2" onClick={handleLogout}>Wyloguj</button>
+      <header className="p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-100 dark:border-zinc-800">
+        <span className="font-bold text-2xl">TimeFlow</span>
+        <nav className="flex flex-wrap gap-3 text-sm">
+          <button className="px-3 py-1 border rounded" onClick={() => setView("settings")}>Ustawienia</button>
+          <button className="px-3 py-1 border rounded" onClick={() => setView("archive")}>Archiwum</button>
+          <button className="px-3 py-1 border rounded" onClick={handleLogout}>Wyloguj</button>
         </nav>
       </header>
-      <main className="max-w-2xl mx-auto p-4">
-        <Weather weather={weather} location={location} setLocation={setLocation} />
-        <Quote />
-        <DailySummary
-          tasks={tasks}
-          showCompleted={showCompletedPanel}
-          onToggleCompleted={() => setShowCompletedPanel(prev => !prev)}
-        />
-        <TaskList
-          userNick={user.nick}
-          tasks={tasks}
-          setTasks={setTasks}
-          setArchive={setArchive}
-          showCompleted={showCompletedPanel}
-          onToggleCompleted={() => setShowCompletedPanel(prev => !prev)}
-        />
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        <div className="grid gap-4 lg:grid-cols-[2fr,1fr]">
+          <div className="space-y-4">
+            <DailySummary
+              tasks={tasks}
+              showCompleted={showCompletedPanel}
+              onToggleCompleted={() => setShowCompletedPanel(prev => !prev)}
+            />
+            <TaskList
+              userNick={user.nick}
+              tasks={tasks}
+              setTasks={setTasks}
+              setArchive={setArchive}
+              showCompleted={showCompletedPanel}
+              onToggleCompleted={() => setShowCompletedPanel(prev => !prev)}
+            />
+          </div>
+          <aside className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+              <Weather weather={weather} location={location} setLocation={setLocation} />
+              <Quote />
+            </div>
+            <section className="p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow border border-gray-100 dark:border-zinc-800 space-y-3">
+              <h3 className="font-semibold text-lg">Szybkie statystyki</h3>
+              <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                <div>
+                  <p className="text-2xl font-bold">{quickStats.active}</p>
+                  <p className="text-gray-500 dark:text-gray-400">Aktywne</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{quickStats.overdue}</p>
+                  <p className="text-gray-500 dark:text-gray-400">Zaległe</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{quickStats.completed}</p>
+                  <p className="text-gray-500 dark:text-gray-400">Wykonane</p>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </div>
       </main>
     </div>
   );
