@@ -1,0 +1,249 @@
+import React, { useMemo, useState } from "react";
+
+const typeColors = {
+  Praca: "bg-blue-100 text-blue-800",
+  Nauka: "bg-green-100 text-green-800",
+  Relaks: "bg-purple-100 text-purple-800",
+  Sport: "bg-orange-100 text-orange-800",
+  Spotkania: "bg-red-100 text-red-800",
+  Inne: "bg-gray-200 text-gray-800",
+};
+
+const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+
+  const stats = useMemo(() => {
+    const total = archive.length;
+    const completed = archive.filter(task => task.completed).length;
+    const overdue = archive.filter(
+      task => !task.completed && task.deadline && new Date(task.deadline) < new Date()
+    ).length;
+    const byType = archive.reduce((acc, task) => {
+      const type = task.type || "Inne";
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+    const topType =
+      Object.entries(byType)
+        .sort((a, b) => b[1] - a[1])
+        .map(([type, count]) => `${type} (${count})`)
+        .slice(0, 2)
+        .join(", ") || "Brak danych";
+    return { total, completed, overdue, topType };
+  }, [archive]);
+
+  const availableTypes = useMemo(() => {
+    return ["All", ...Array.from(new Set(archive.map(task => task.type || "Inne")))];
+  }, [archive]);
+
+  const availablePriorities = ["All", "Low", "Medium", "High"];
+
+  const filteredArchive = archive.filter(task => {
+    const text = `${task.content || task.text || ""} ${task.description || ""}`.toLowerCase();
+    const matchesSearch = text.includes(searchTerm.toLowerCase());
+    const matchesType = typeFilter === "All" || (task.type || "Inne") === typeFilter;
+    const matchesPriority = priorityFilter === "All" || (task.priority || "Low") === priorityFilter;
+    return matchesSearch && matchesType && matchesPriority;
+  });
+
+  const formatDate = value => {
+    if (!value) return "Brak";
+    try {
+      return new Date(value).toLocaleDateString("pl-PL");
+    } catch (err) {
+      return value;
+    }
+  };
+
+  const renderTags = task => {
+    const tags = Array.isArray(task.tags)
+      ? task.tags
+      : task.tags
+      ? String(task.tags)
+          .split(",")
+          .map(t => t.trim())
+          .filter(Boolean)
+      : [];
+    if (!tags.length) {
+      return null;
+    }
+    return (
+      <div className="flex flex-wrap gap-2 mt-2 text-xs">
+        {tags.map(tag => (
+          <span key={tag} className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100">
+            #{tag}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  const handleRestoreClick = taskId => {
+    if (onRestore) {
+      onRestore(taskId);
+    }
+  };
+
+  const handleDeleteClick = taskId => {
+    if (onDelete) {
+      onDelete(taskId);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 p-6 transition-colors">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold mb-1">Archiwum zadań</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Przechowuj wykonane lub ukryte zadania i zarządzaj nimi w jednym miejscu.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              onClick={onBack}
+            >
+              Powrót do zadań
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-green-900 disabled:text-gray-300"
+              disabled={!archive.length}
+              onClick={() => onRestoreAll && onRestoreAll()}
+            >
+              Przywróć wszystkie
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:bg-red-900 disabled:text-gray-300"
+              disabled={!archive.length}
+              onClick={() => onClear && onClear()}
+            >
+              Wyczyść archiwum
+            </button>
+          </div>
+        </header>
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Łącznie" value={stats.total} />
+          <StatCard label="Zakończone" value={stats.completed} />
+          <StatCard label="Zaległe" value={stats.overdue} />
+          <StatCard label="Najczęstsze typy" value={stats.topType} />
+        </section>
+
+        <section className="bg-white dark:bg-zinc-800 rounded-2xl shadow p-4 space-y-4">
+          <h2 className="font-semibold text-lg">Filtry</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm mb-1">Wyszukiwanie</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Szukaj po treści lub opisie..."
+                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">Typ zadania</label>
+              <select
+                value={typeFilter}
+                onChange={e => setTypeFilter(e.target.value)}
+                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600"
+              >
+                {availableTypes.map(type => (
+                  <option key={type} value={type}>
+                    {type === "All" ? "Wszystkie" : type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm mb-1">Priorytet</label>
+              <select
+                value={priorityFilter}
+                onChange={e => setPriorityFilter(e.target.value)}
+                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600"
+              >
+                {availablePriorities.map(priority => (
+                  <option key={priority} value={priority}>
+                    {priority === "All"
+                      ? "Wszystkie"
+                      : priority === "Low"
+                      ? "Niski"
+                      : priority === "Medium"
+                      ? "Średni"
+                      : "Wysoki"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          {filteredArchive.length === 0 && (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-10 border border-dashed rounded-2xl">
+              Brak zadań spełniających kryteria wyszukiwania.
+            </div>
+          )}
+          {filteredArchive.map(task => (
+            <article
+              key={task.id || `${task.content}-${task.deadline}`}
+              className="bg-white dark:bg-zinc-800 rounded-2xl shadow p-4 border border-gray-100 dark:border-zinc-700"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-xl font-semibold">{task.content || task.text}</h3>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        typeColors[task.type] || typeColors.Inne
+                      }`}
+                    >
+                      {task.type || "Inne"}
+                    </span>
+                  </div>
+                  {task.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{task.description}</p>
+                  )}
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                    <div>Priorytet: {task.priority || "Low"}</div>
+                    <div>Termin: {formatDate(task.deadline)}</div>
+                    <div>Status: {task.completed ? "Zakończone" : "Nieukończone"}</div>
+                  </div>
+                  {renderTags(task)}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+                    onClick={() => handleRestoreClick(task.id)}
+                  >
+                    Przywróć
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-100"
+                    onClick={() => handleDeleteClick(task.id)}
+                  >
+                    Usuń z archiwum
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </section>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ label, value }) => (
+  <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow p-4 border border-gray-100 dark:border-zinc-800">
+    <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+    <p className="text-2xl font-semibold mt-1">{value}</p>
+  </div>
+);
+
+export default Archive;
