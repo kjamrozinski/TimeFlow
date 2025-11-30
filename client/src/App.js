@@ -241,13 +241,21 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-white transition-colors">
-      <header className="p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-100 dark:border-zinc-800">
-        <span className="font-bold text-2xl">TimeFlow</span>
-        <nav className="flex flex-wrap gap-3 text-sm">
-          <button className="px-3 py-1 border rounded" onClick={() => setView("settings")}>Ustawienia</button>
-          <button className="px-3 py-1 border rounded" onClick={() => setView("archive")}>Archiwum</button>
-          <button className="px-3 py-1 border rounded" onClick={handleLogout}>Wyloguj</button>
-        </nav>
+      <header className="relative overflow-hidden border-b border-gray-100 dark:border-zinc-800">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-purple-200/40 to-pink-200/40 dark:from-blue-900/30 dark:via-purple-900/30 dark:to-pink-900/30 blur-3xl opacity-70 pointer-events-none" />
+        <div className="relative z-10 px-4 py-8 flex flex-col items-center gap-4">
+          <div className="hero-title text-center">
+            TimeFlow
+          </div>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500 dark:text-gray-300">
+            Harmonogram • mindfulness • produktywnosc
+          </p>
+          <nav className="flex flex-wrap justify-center gap-3 text-sm">
+            <button className="px-4 py-2 border rounded-full backdrop-blur bg-white/70 dark:bg-zinc-800/60" onClick={() => setView("settings")}>Ustawienia</button>
+            <button className="px-4 py-2 border rounded-full backdrop-blur bg-white/70 dark:bg-zinc-800/60" onClick={() => setView("archive")}>Archiwum</button>
+            <button className="px-4 py-2 border rounded-full backdrop-blur bg-white/70 dark:bg-zinc-800/60" onClick={handleLogout}>Wyloguj</button>
+          </nav>
+        </div>
       </header>
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <div className="grid gap-4 lg:grid-cols-[2fr,1fr]">
