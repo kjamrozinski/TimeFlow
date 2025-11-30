@@ -8,6 +8,7 @@ import Settings from "./Settings";
 import Archive from "./Archive";
 import Quote from "./Quote";
 import DailySummary from "./DailySummary";
+import { FiCloud } from "react-icons/fi";
 
 const API_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
@@ -46,11 +47,26 @@ function App() {
   }, [preferences]);
 
   useEffect(() => {
-    if (preferences.theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    const applyTheme = (theme) => {
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    };
+    applyTheme(preferences.theme);
+    const observer = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setPreferences((prev) => {
+        if ((isDark ? "dark" : "light") === prev.theme) return prev;
+        return { ...prev, theme: isDark ? "dark" : "light" };
+      });
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"]
+    });
+    return () => observer.disconnect();
   }, [preferences.theme]);
 
   useEffect(() => {
@@ -94,12 +110,45 @@ function App() {
   // Pobieraj pogodę, gdy lokalizacja się zmieni
   useEffect(() => {
     if (!location) return;
-    // Przykład z Open-Meteo (możesz podmienić na inne API)
-    fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&current_weather=true`
-    )
+    const { lat, lon } = location;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relativehumidity_2m,surface_pressure,apparent_temperature,precipitation&timezone=auto`;
+    fetch(url)
       .then((r) => r.json())
-      .then((data) => setWeather(data.current_weather))
+      .then((data) => {
+        if (!data.current_weather) {
+          setWeather(null);
+          return;
+        }
+        const current = data.current_weather;
+        let humidity = null;
+        let pressure = null;
+        let feelsLike = null;
+        let precipitation = null;
+        if (data.hourly?.time?.length) {
+          const idx = data.hourly.time.indexOf(current.time);
+          const fallbackIdx = idx !== -1 ? idx : 0;
+          if (data.hourly.relativehumidity_2m) {
+            humidity = data.hourly.relativehumidity_2m[fallbackIdx];
+          }
+          if (data.hourly.surface_pressure) {
+            pressure = data.hourly.surface_pressure[fallbackIdx];
+          }
+          if (data.hourly.apparent_temperature) {
+            feelsLike = data.hourly.apparent_temperature[fallbackIdx];
+          }
+          if (data.hourly.precipitation) {
+            precipitation = data.hourly.precipitation[fallbackIdx];
+          }
+        }
+        setWeather({
+          ...current,
+          humidity,
+          pressure,
+          feelsLike,
+          precipitation,
+          fetchedAt: new Date().toISOString()
+        });
+      })
       .catch(() => setWeather(null));
   }, [location]);
 
@@ -211,6 +260,8 @@ function App() {
     return { active, overdue, completed };
   }, [tasks]);
 
+  const isDarkTheme = preferences.theme === "dark";
+
   if (!user) {
     if (view === "login")
       return <Login onLogin={handleLogin} onSwitch={() => setView("register")} onReset={() => setView("reset")} />;
@@ -242,21 +293,40 @@ function App() {
     );
   }
 
+  const withBasePath = (relativePath) => {
+    const candidate =
+      (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL) ||
+      process.env.PUBLIC_URL ||
+      "/";
+    if (!candidate || candidate === "/") {
+      return relativePath;
+    }
+    return `${candidate.replace(/\/$/, "")}${relativePath}`;
+  };
+
+  const appIconSmall = withBasePath("/icons/icon-192.png");
+  const appIconLarge = withBasePath("/icons/icon-512.png");
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-white transition-colors">
-      <header className="relative overflow-hidden border-b border-gray-100 dark:border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-purple-200/40 to-pink-200/40 dark:from-blue-900/30 dark:via-purple-900/30 dark:to-pink-900/30 blur-3xl opacity-70 pointer-events-none" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+      <header className="relative overflow-hidden border-b border-white/40 dark:border-slate-800">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-200/50 via-purple-200/40 to-pink-200/40 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40 blur-3xl opacity-80 pointer-events-none" />
         <div className="relative z-10 px-4 py-8 flex flex-col items-center gap-4">
-          <div className="hero-title text-center">
-            TimeFlow
+          <div className="hero-title flex items-center justify-center gap-4">
+            <img
+              src={appIconLarge}
+              alt="Ikona TimeFlow"
+              className="w-16 h-16 rounded-3xl shadow-lg"
+            />
+            <span>TimeFlow</span>
           </div>
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500 dark:text-gray-300">
-            Harmonogram • mindfulness • produktywnosc
+          <p className="text-sm uppercase tracking-[0.4em] text-slate-500 dark:text-slate-300">
+            Harmonogram • mindfulness • produktywność
           </p>
           <nav className="flex flex-wrap justify-center gap-3 text-sm">
-            <button className="px-4 py-2 border rounded-full backdrop-blur bg-white/70 dark:bg-zinc-800/60" onClick={() => setView("settings")}>Ustawienia</button>
-            <button className="px-4 py-2 border rounded-full backdrop-blur bg-white/70 dark:bg-zinc-800/60" onClick={() => setView("archive")}>Archiwum</button>
-            <button className="px-4 py-2 border rounded-full backdrop-blur bg-white/70 dark:bg-zinc-800/60" onClick={handleLogout}>Wyloguj</button>
+            <button className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60" onClick={() => setView("settings")}>Ustawienia</button>
+            <button className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60" onClick={() => setView("archive")}>Archiwum</button>
+            <button className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60" onClick={handleLogout}>Wyloguj</button>
           </nav>
         </div>
       </header>
@@ -275,6 +345,10 @@ function App() {
               setArchive={setArchive}
               showCompleted={showCompletedPanel}
               onToggleCompleted={() => setShowCompletedPanel(prev => !prev)}
+              theme={preferences.theme}
+              onToggleTheme={() =>
+                updatePreference('theme', isDarkTheme ? 'light' : 'dark')
+              }
             />
           </div>
           <aside className="space-y-4">
@@ -305,6 +379,44 @@ function App() {
                   <p className="text-gray-500 dark:text-gray-400">Wykonane</p>
                 </div>
               </div>
+            </section>
+            <section
+              className={
+                isDarkTheme
+                  ? "p-5 rounded-3xl shadow-xl space-y-3 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 text-slate-100"
+                  : "p-5 rounded-3xl shadow-xl space-y-3 bg-gradient-to-br from-indigo-500 to-blue-500 text-white"
+              }
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-2xl bg-white/20 dark:bg-slate-800/60 text-white">
+                  <FiCloud className="text-2xl" />
+                </div>
+                <div>
+                  <p className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-white/80'}`}>
+                    Wkrótce
+                  </p>
+                  <h3 className="text-lg font-semibold">
+                    TimeFlow Cloud
+                  </h3>
+                </div>
+              </div>
+              <p className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-white/90'}`}>
+                Przechowuj zdjęcia zadań, notatki głosowe i ważne dokumenty w bezpiecznej chmurze TimeFlow.
+              </p>
+              <ul className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-white/90'} space-y-1`}>
+                <li>• Automatyczne kopie zapasowe</li>
+                <li>• Synchronizacja między urządzeniami</li>
+                <li>• Szyfrowane udostępnianie</li>
+              </ul>
+              <button
+                className={
+                  isDarkTheme
+                    ? "w-full mt-2 px-4 py-2 rounded-2xl bg-indigo-900 text-indigo-100 hover:bg-indigo-800 text-sm font-semibold backdrop-blur"
+                    : "w-full mt-2 px-4 py-2 rounded-2xl bg-white/30 hover:bg-white/40 text-sm font-semibold backdrop-blur"
+                }
+              >
+                Dowiedz się więcej
+              </button>
             </section>
           </aside>
         </div>

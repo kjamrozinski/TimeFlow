@@ -10,6 +10,8 @@ function TaskList({
   setArchive,
   showCompleted = false,
   onToggleCompleted = () => {},
+  theme = 'light',
+  onToggleTheme = () => {},
 }) {
   // Stany aplikacji
   const [loading, setLoading] = useState(true);
@@ -19,20 +21,6 @@ function TaskList({
   const [filterTag, setFilterTag] = useState('All');
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterDate, setFilterDate] = useState('');
-
-  // Motyw (jasny/ciemny) z pamięcią w localStorage
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
-  };
 
   // Pobieranie zadań z backendu po załadowaniu komponentu
   useEffect(() => {
@@ -267,9 +255,9 @@ function TaskList({
           <span className="font-semibold">Zaległe:</span> {overdueCount} |{" "}
           <span className="font-semibold">Aktywne:</span> {activeCount}
         </div>
-        <button 
-          onClick={toggleTheme}
-          className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-200 dark:bg-gray-800"
+        <button
+          onClick={onToggleTheme}
+          className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-200 dark:bg-gray-800 text-sm font-medium"
         >
           {theme === 'dark' ? '☀️ Tryb jasny' : '🌙 Tryb ciemny'}
         </button>
