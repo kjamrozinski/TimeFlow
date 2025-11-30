@@ -29,9 +29,6 @@ const Settings = ({ user, onBack, preferences, onUpdatePreferences }) => {
       <div className="max-w-4xl mx-auto space-y-6">
         <header className="flex items-center justify-between bg-white/70 dark:bg-slate-900/70 rounded-3xl px-6 py-4 shadow border border-white/60 dark:border-slate-800">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">
-              Control Center
-            </p>
             <h2 className="text-2xl font-bold">Ustawienia</h2>
           </div>
           <button
