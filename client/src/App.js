@@ -18,7 +18,53 @@ function App() {
   const [archive, setArchive] = useState([]);
   const [location, setLocation] = useState(null);
   const [weather, setWeather] = useState(null);
-  const [showCompletedPanel, setShowCompletedPanel] = useState(false);
+
+  const defaultPreferences = {
+    theme: "light",
+    showWeather: true,
+    showQuote: true,
+    autoExpandCompleted: false,
+  };
+
+  const [preferences, setPreferences] = useState(() => {
+    try {
+      const stored = localStorage.getItem("timeflow_preferences");
+      return stored ? { ...defaultPreferences, ...JSON.parse(stored) } : defaultPreferences;
+    } catch (err) {
+      return defaultPreferences;
+    }
+  });
+  const [showCompletedPanel, setShowCompletedPanel] = useState(
+    !!preferences.autoExpandCompleted
+  );
+
+  useEffect(() => {
+    localStorage.setItem("timeflow_preferences", JSON.stringify(preferences));
+  }, [preferences]);
+
+  useEffect(() => {
+    if (preferences.theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [preferences.theme]);
+
+  useEffect(() => {
+    setPreferences((prev) => {
+      if (prev.autoExpandCompleted === showCompletedPanel) {
+        return prev;
+      }
+      return { ...prev, autoExpandCompleted: showCompletedPanel };
+    });
+  }, [showCompletedPanel]);
+
+  const updatePreference = (key, value) => {
+    setPreferences((prev) => ({ ...prev, [key]: value }));
+    if (key === "autoExpandCompleted") {
+      setShowCompletedPanel(!!value);
+    }
+  };
 
   // Sprawdzaj lokalizację co 10 minut
   useEffect(() => {
@@ -171,7 +217,15 @@ function App() {
       return <ResetPassword onReset={handleResetPassword} onSwitch={() => setView("login")} />;
   }
 
-  if (view === "settings") return <Settings user={user} onBack={() => setView("dashboard")} />;
+  if (view === "settings")
+    return (
+      <Settings
+        user={user}
+        onBack={() => setView("dashboard")}
+        preferences={preferences}
+        onUpdatePreferences={updatePreference}
+      />
+    );
   if (view === "archive") {
     return (
       <Archive
@@ -214,8 +268,15 @@ function App() {
           </div>
           <aside className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-              <Weather weather={weather} location={location} setLocation={setLocation} />
-              <Quote />
+              {preferences.showWeather && (
+                <Weather weather={weather} location={location} setLocation={setLocation} />
+              )}
+              {preferences.showQuote && <Quote />}
+              {!preferences.showWeather && !preferences.showQuote && (
+                <div className="p-4 rounded-2xl bg-white dark:bg-zinc-800 border border-dashed text-sm text-gray-500 dark:text-gray-400">
+                  Panele pogody i cytatu sa wylaczone w ustawieniach.
+                </div>
+              )}
             </div>
             <section className="p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow border border-gray-100 dark:border-zinc-800 space-y-3">
               <h3 className="font-semibold text-lg">Szybkie statystyki</h3>
