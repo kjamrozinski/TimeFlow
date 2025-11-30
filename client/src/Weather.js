@@ -58,7 +58,6 @@ const hazardRules = [
 const Weather = ({ weather, location, setLocation }) => {
   const [city, setCity] = useState("");
   const [cityName, setCityName] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(
     typeof document !== "undefined"
       ? document.documentElement.classList.contains("dark")
@@ -100,11 +99,10 @@ const Weather = ({ weather, location, setLocation }) => {
   const handleCitySubmit = (e) => {
     e.preventDefault();
     if (!cityName.trim()) return;
-    fetch(
-      `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(
-        cityName
-      )}&format=json`
-    )
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+      cityName
+    )}&format=json&limit=1`;
+    fetch(url)
       .then((r) => r.json())
       .then((results) => {
         if (results.length > 0) {
@@ -113,7 +111,6 @@ const Weather = ({ weather, location, setLocation }) => {
             lon: parseFloat(results[0].lon)
           });
           setCityName("");
-          setIsSearching(false);
         } else {
           alert("Nie znaleziono miasta. Spróbuj innej nazwy.");
         }
@@ -241,37 +238,55 @@ const Weather = ({ weather, location, setLocation }) => {
           )}
         </div>
 
-        <div className="bg-white/10 rounded-2xl p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-white/70">
+        <div className="bg-white/10 rounded-2xl p-3 space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs uppercase tracking-wide text-white/70 m-0">
               Zmień lokalizację
             </p>
             <button
-              className="text-xs font-semibold underline text-white/80"
-              onClick={() => setIsSearching((v) => !v)}
+              className="px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold hover:bg-white/30 whitespace-nowrap"
+              onClick={() => {
+                if (
+                  typeof window !== "undefined" &&
+                  window.location.protocol !== "https:" &&
+                  window.location.hostname !== "localhost"
+                ) {
+                  alert("Geolokalizacja działa tylko na HTTPS lub na localhost.");
+                  return;
+                }
+                if (!navigator.geolocation) {
+                  alert("Geolokalizacja nie jest wspierana w tej przeglądarce.");
+                  return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    setLocation({
+                      lat: pos.coords.latitude,
+                      lon: pos.coords.longitude
+                    });
+                  },
+                  () => alert("Nie udało się pobrać bieżącej lokalizacji.")
+                );
+              }}
             >
-              {isSearching ? "Zamknij" : "Wpisz miasto"}
+              Bieżąca lokalizacja
             </button>
           </div>
-          {isSearching && (
-            <form className="flex flex-col gap-2 sm:flex-row" onSubmit={handleCitySubmit}>
-              <input
-                type="text"
-                placeholder="np. Wrocław"
-                value={cityName}
-                onChange={(e) => setCityName(e.target.value)}
-                className="flex-1 rounded-xl px-3 py-2 text-sm text-gray-900"
-              />
-              <button className="px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold">
-                Szukaj
-              </button>
-            </form>
-          )}
-          {!isSearching && (
-            <p className="text-xs text-white/60">
-              Możesz śledzić pogodę w innych miastach, wybierając je ręcznie.
-            </p>
-          )}
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={handleCitySubmit}>
+            <input
+              type="text"
+              placeholder="np. Wrocław"
+              value={cityName}
+              onChange={(e) => setCityName(e.target.value)}
+              className="flex-1 rounded-xl px-3 py-2 text-sm text-gray-900"
+            />
+            <button className="px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold">
+              Szukaj
+            </button>
+          </form>
+          <p className="text-xs text-white/60">
+            Możesz śledzić pogodę w innych miastach, wpisując ich nazwy powyżej.
+          </p>
         </div>
       </div>
     </div>

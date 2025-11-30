@@ -93,31 +93,31 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 p-6 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 p-6 transition-colors">
       <div className="max-w-5xl mx-auto space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/70 dark:bg-slate-900/70 rounded-3xl px-6 py-4 shadow border border-white/60 dark:border-slate-800">
           <div>
             <h1 className="text-3xl font-semibold mb-1">Archiwum zadań</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Przechowuj wykonane lub ukryte zadania i zarządzaj nimi w jednym miejscu.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3 justify-center sm:justify-end">
             <button
-              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold shadow"
               onClick={onBack}
             >
               Powrót do zadań
             </button>
             <button
-              className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-green-900 disabled:text-gray-300"
+              className="px-4 py-2 rounded-full bg-green-500 text-white font-semibold shadow disabled:bg-green-900 disabled:text-gray-300"
               disabled={!archive.length}
               onClick={() => onRestoreAll && onRestoreAll()}
             >
               Przywróć wszystkie
             </button>
             <button
-              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:bg-red-900 disabled:text-gray-300"
+              className="px-4 py-2 rounded-full bg-red-600 text-white font-semibold shadow disabled:bg-red-900 disabled:text-gray-300"
               disabled={!archive.length}
               onClick={() => onClear && onClear()}
             >
