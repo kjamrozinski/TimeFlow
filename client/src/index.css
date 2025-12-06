@@ -25,3 +25,41 @@
     background-position: 0% 50%;
   }
 }
+
+.login-animated-bg {
+  position: relative;
+  isolation: isolate;
+}
+
+.login-animated-bg::before,
+.login-animated-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.12), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(129, 140, 248, 0.12), transparent 30%),
+    radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.12), transparent 30%),
+    linear-gradient(120deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.08), rgba(236, 72, 153, 0.08));
+  filter: blur(50px);
+  opacity: 0.8;
+  animation: loginGradient 16s ease-in-out infinite alternate;
+  z-index: -2;
+}
+
+.login-animated-bg::after {
+  filter: blur(90px);
+  opacity: 0.4;
+  animation-duration: 22s;
+}
+
+@keyframes loginGradient {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-10px, 10px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(12px, -12px, 0) scale(1.02);
+  }
+}
