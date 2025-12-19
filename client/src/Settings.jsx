@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 
 const Settings = ({ user, onBack, preferences, onUpdatePreferences }) => {
   const [nick, setNick] = useState(user.nick || "");
@@ -86,9 +86,10 @@ const Settings = ({ user, onBack, preferences, onUpdatePreferences }) => {
           </div>
           <div className="space-y-3">
             {[
-              { key: "showWeather", label: "Pokazuj panel pogody" },
-              { key: "showQuote", label: "Pokazuj panel z cytatem dnia" },
+              { key: "showWeather", label: "Pokaż panel pogody" },
+              { key: "showQuote", label: "Pokaż panel z cytatem dnia" },
               { key: "autoExpandCompleted", label: "Domyślnie pokazuj wykonane zadania" },
+              { key: "focusMode", label: "Tryb skupienia (ukryj panele boczne)" },
             ].map((item) => (
               <label
                 key={item.key}

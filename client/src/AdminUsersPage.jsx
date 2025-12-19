@@ -4,7 +4,7 @@ import { Navigate } from "react-router-dom";
 const mockUsers = [
   { name: "Anna Nowak", email: "anna@timeflow.app", role: "user", status: "Aktywny" },
   { name: "Jan Kowalski", email: "jan@timeflow.app", role: "advanced", status: "Aktywny" },
-  { name: "Katarzyna Wiśniewska", email: "kasia@timeflow.app", role: "admin", status: "Wstrzymany" },
+  { name: "Katarzyna Winiewska", email: "kasia@timeflow.app", role: "admin", status: "Wstrzymany" },
 ];
 
 function AdminUsersPage({ currentUser }) {
@@ -23,7 +23,7 @@ function AdminUsersPage({ currentUser }) {
           <div>
             <h2 className="text-lg font-semibold">Użytkownicy</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Placeholder tabeli – tutaj pojawią się akcje administracyjne.
+              Placeholder tabeli — tutaj pojawią się akcje administracyjne.
             </p>
           </div>
           <span className="text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">

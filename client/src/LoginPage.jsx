@@ -184,7 +184,7 @@ function LoginPage({ onLogin, onReset, onCreateAccount, theme, onToggleTheme }) 
               >
                 <div className="flex items-center gap-2">
                   <FiShield />
-                  <span>Wymagania: {passwordHints.join(" • ")}</span>
+                  <span>Wymagania: {passwordHints.join("  ")}</span>
                 </div>
                 {capsLockOn && <span className="text-amber-600 font-semibold">Caps Lock włączony</span>}
               </div>
@@ -247,31 +247,31 @@ function LoginPage({ onLogin, onReset, onCreateAccount, theme, onToggleTheme }) 
                 <button
                   type="button"
                   onClick={handleDemoFill}
-                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm ${
-                  isDark
-                    ? "border border-white/15 bg-white/5 text-slate-100 hover:border-sky-400/50"
-                    : "border border-slate-200 bg-white text-slate-900 hover:border-sky-400"
-                }`}
-              >
-                Uzupełnij dane demo
-              </button>
-              <div className="flex items-center justify-between text-sm">
-                <button
-                  type="button"
-                  onClick={() => onReset?.(form.email)}
-                  className="text-sky-600 hover:text-sky-700 underline underline-offset-4"
+                  className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm ${
+                    isDark
+                      ? "border border-white/15 bg-white/5 text-slate-100 hover:border-sky-400/50"
+                      : "border border-slate-200 bg-white text-slate-900 hover:border-sky-400"
+                  }`}
                 >
-                  Zapomniałem hasła
+                  Uzupełnij dane demo
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onCreateAccount?.()}
-                  className="text-sky-600 hover:text-sky-700 underline underline-offset-4"
-                >
-                  Stwórz konto
-                </button>
+                <div className="flex items-center justify-between text-sm">
+                  <button
+                    type="button"
+                    onClick={() => onReset?.(form.email)}
+                    className="text-sky-600 hover:text-sky-700 underline underline-offset-4"
+                  >
+                    Zapomniałem hasła
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onCreateAccount?.()}
+                    className="text-sky-600 hover:text-sky-700 underline underline-offset-4"
+                  >
+                    Stwórz konto
+                  </button>
+                </div>
               </div>
-            </div>
             </div>
 
             <div

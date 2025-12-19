@@ -1,9 +1,18 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 const dayLabels = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nd"];
 
+const FOCUS_STORAGE_KEY = "timeflow_focus_sessions";
+
 const formatShortDate = (date) =>
   date.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+
+const formatDuration = (seconds) => {
+  const total = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+};
 
 const getStartOfWeek = (date) => {
   const day = date.getDay();
@@ -55,6 +64,7 @@ const getHeatColor = (count) => {
 };
 
 const WeekView = ({ tasks = [], onBack }) => {
+  const [focusSessions, setFocusSessions] = useState([]);
   const today = new Date();
   const startOfWeek = getStartOfWeek(today);
   const days = Array.from({ length: 7 }, (_, idx) => {
@@ -91,6 +101,15 @@ const WeekView = ({ tasks = [], onBack }) => {
 
   const heatmapCells = useMemo(() => buildHeatmapDays(tasks, 28), [tasks]);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(FOCUS_STORAGE_KEY);
+      setFocusSessions(stored ? JSON.parse(stored) : []);
+    } catch (_err) {
+      setFocusSessions([]);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 p-6 transition-colors">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -121,7 +140,7 @@ const WeekView = ({ tasks = [], onBack }) => {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-lg font-semibold">Plan tygodnia</h2>
             <span className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
-              {formatShortDate(days[0])} – {formatShortDate(days[6])}
+              {formatShortDate(days[0])}  {formatShortDate(days[6])}
             </span>
           </div>
           <div className="grid gap-4 lg:grid-cols-7">
@@ -170,7 +189,7 @@ const WeekView = ({ tasks = [], onBack }) => {
             {heatmapCells.map((cell) => (
               <div
                 key={cell.key}
-                title={`${cell.count} zadań – ${formatShortDate(cell.date)}`}
+                title={`${cell.count} zadań ${formatShortDate(cell.date)}`}
                 className={`h-6 w-full rounded-lg ${getHeatColor(cell.count)}`}
               />
             ))}
@@ -183,6 +202,42 @@ const WeekView = ({ tasks = [], onBack }) => {
             <span className="h-3 w-3 rounded bg-emerald-600" />
             <span>Dużo</span>
           </div>
+        </section>
+
+        <section className="bg-white dark:bg-slate-900 rounded-3xl shadow border border-slate-100 dark:border-slate-800 p-5 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h2 className="text-lg font-semibold">Sesje skupienia</h2>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Ostatnie 14 dni</span>
+          </div>
+          {focusSessions.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">Brak zapisanych sesji.</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {focusSessions.slice(0, 6).map((session) => {
+                const start = new Date(session.startAt);
+                const end = new Date(session.endAt);
+                return (
+                  <div
+                    key={session.id}
+                    className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 space-y-1"
+                  >
+                    <div className="flex items-center justify-between text-sm font-semibold">
+                      <span>{formatDuration(session.durationSeconds)}</span>
+                      <span className="text-emerald-600 dark:text-emerald-300">
+                        {session.completed ? "Ukończona" : "Przerwana"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {start.toLocaleDateString("pl-PL")}  {start.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Zakończono: {end.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       </div>
     </div>

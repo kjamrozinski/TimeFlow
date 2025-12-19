@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Register from "./Register";
 import ResetPassword from "./ResetPassword";
 import Weather from "./Weather";
@@ -29,7 +29,11 @@ const defaultPreferences = {
   autoExpandCompleted: false,
   defaultPriority: "Low",
   defaultType: "Inne",
+  focusMode: false,
 };
+const FOCUS_STORAGE_KEY = "timeflow_focus_sessions";
+const DEFAULT_FOCUS_MINUTES = 25;
+
 
 function App() {
   const [user, setUser] = useState(null);
@@ -48,11 +52,30 @@ function App() {
     }
   });
   const [showCompletedPanel, setShowCompletedPanel] = useState(!!preferences.autoExpandCompleted);
+  const [focusHours, setFocusHours] = useState(0);
+  const [focusMinutes, setFocusMinutes] = useState(DEFAULT_FOCUS_MINUTES);
+  const [focusSeconds, setFocusSeconds] = useState(0);
+  const [focusRemaining, setFocusRemaining] = useState(DEFAULT_FOCUS_MINUTES * 60);
+  const [focusRunning, setFocusRunning] = useState(false);
+  const focusStartedAtRef = useRef(null);
+  const focusInitialSecondsRef = useRef(DEFAULT_FOCUS_MINUTES * 60);
+  const [focusSessions, setFocusSessions] = useState(() => {
+    try {
+      const stored = localStorage.getItem(FOCUS_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (_err) {
+      return [];
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem("timeflow_preferences", JSON.stringify(preferences));
     document.documentElement.classList.toggle("dark", preferences.theme === "dark");
   }, [preferences]);
+
+  useEffect(() => {
+    localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(focusSessions));
+  }, [focusSessions]);
 
   const persistPreferences = (nextPreferences) => {
     if (!user?.nick) return;
@@ -100,7 +123,77 @@ function App() {
     });
   }, [showCompletedPanel]);
 
-  const updatePreference = (key, value) => {
+  const saveFocusSession = ({ startAt, endAt, durationSeconds, completed }) => {
+    const session = {
+      id: `${startAt}-${endAt}`,
+      startAt,
+      endAt,
+      durationSeconds,
+      completed,
+    };
+    setFocusSessions((prev) => [session, ...prev].slice(0, 100));
+  };
+
+  const focusTotalSeconds =
+    Math.max(0, Number(focusHours) || 0) * 3600 +
+    Math.max(0, Number(focusMinutes) || 0) * 60 +
+    Math.max(0, Number(focusSeconds) || 0);
+
+  useEffect(() => {
+    if (!focusRunning) return;
+    const timer = setInterval(() => {
+      setFocusRemaining((prev) => {
+        if (prev <= 1) {
+          const endAt = new Date().toISOString();
+          const startAt = focusStartedAtRef.current || endAt;
+          saveFocusSession({
+            startAt,
+            endAt,
+            durationSeconds: focusInitialSecondsRef.current,
+            completed: true,
+          });
+          focusStartedAtRef.current = null;
+          focusInitialSecondsRef.current = focusTotalSeconds;
+          setFocusRunning(false);
+          setTimeout(() => alert("Sesja skupienia zakończona."), 0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [focusRunning, focusTotalSeconds]);
+
+  const handleFocusStart = () => {
+    if (focusRunning) return;
+    if (focusTotalSeconds <= 0) return;
+    if (focusRemaining <= 0) {
+      setFocusRemaining(focusTotalSeconds);
+      focusInitialSecondsRef.current = focusTotalSeconds;
+    }
+    focusStartedAtRef.current = new Date().toISOString();
+    setFocusRunning(true);
+  };
+
+  const handleFocusPause = () => {
+    setFocusRunning(false);
+  };
+
+  const handleFocusReset = () => {
+    setFocusRunning(false);
+    setFocusRemaining(focusTotalSeconds);
+    focusInitialSecondsRef.current = focusTotalSeconds;
+    focusStartedAtRef.current = null;
+  };
+
+  useEffect(() => {
+    if (focusRunning) return;
+    setFocusRemaining(focusTotalSeconds);
+    focusInitialSecondsRef.current = focusTotalSeconds;
+    focusStartedAtRef.current = null;
+  }, [focusTotalSeconds, focusRunning]);
+
+const updatePreference = (key, value) => {
     setPreferences((prev) => {
       const next = { ...prev, [key]: value };
       persistPreferences(next);
@@ -132,6 +225,7 @@ function App() {
               : prev.autoExpandCompleted,
           defaultPriority: data.defaultPriority || prev.defaultPriority,
           defaultType: data.defaultType || prev.defaultType,
+          focusMode: typeof data.focusMode === "boolean" ? data.focusMode : prev.focusMode,
         }));
         setShowCompletedPanel(!!data.autoExpandCompleted);
       })
@@ -151,7 +245,8 @@ function App() {
           },
           () => {
             setLocation({ city: "Wrocław" }); // fallback
-          }
+          },
+          { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
         );
       }
     };
@@ -229,7 +324,7 @@ function App() {
         return;
       }
     } catch (_err) {
-      // Brak połączenia z API – przechodzimy na tryb mock poniżej.
+      // Brak poczenia z API  przechodzimy na tryb mock poniej.
     }
 
     // Fallback mock (gdy API jest niedostępne lub zwraca błąd)
@@ -442,6 +537,12 @@ function App() {
             </button>
             <button
               className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60"
+              onClick={() => updatePreference("focusMode", !preferences.focusMode)}
+            >
+              {preferences.focusMode ? "Wyłącz fokus" : "Tryb skupienia"}
+            </button>
+            <button
+              className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60"
               onClick={handleLogout}
             >
               Wyloguj
@@ -449,9 +550,88 @@ function App() {
           </nav>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        <div className="grid gap-4 lg:grid-cols-[2fr,1fr]">
+      <main className={`max-w-6xl mx-auto px-4 py-6 space-y-6 ${preferences.focusMode ? "max-w-4xl" : ""}`}>
+        <div className={`grid gap-4 ${preferences.focusMode ? "lg:grid-cols-1" : "lg:grid-cols-[2fr,1fr]"}`}>
           <div className="space-y-4">
+            {preferences.focusMode && (
+              <section className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 shadow p-5 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold">Sesja skupienia</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Skup się na jednym zadaniu. Po zakończeniu pojawi się alert.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <label className="text-slate-500 dark:text-slate-400">Godz</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={focusHours}
+                        onChange={(e) => setFocusHours(Number(e.target.value))}
+                        disabled={focusRunning}
+                        className="w-16 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-2 py-1 text-sm text-slate-700 dark:text-slate-100"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-slate-500 dark:text-slate-400">Min</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={focusMinutes}
+                        onChange={(e) => setFocusMinutes(Number(e.target.value))}
+                        disabled={focusRunning}
+                        className="w-16 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-2 py-1 text-sm text-slate-700 dark:text-slate-100"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-slate-500 dark:text-slate-400">Sek</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={focusSeconds}
+                        onChange={(e) => setFocusSeconds(Number(e.target.value))}
+                        disabled={focusRunning}
+                        className="w-16 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-2 py-1 text-sm text-slate-700 dark:text-slate-100"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="text-4xl font-semibold tracking-tight">
+                    {String(Math.floor(focusRemaining / 60)).padStart(2, "0")}:
+                    {String(focusRemaining % 60).padStart(2, "0")}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!focusRunning ? (
+                      <button
+                        className="px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500"
+                        onClick={handleFocusStart}
+                      >
+                        Start
+                      </button>
+                    ) : (
+                      <button
+                        className="px-4 py-2 rounded-full bg-amber-400 text-slate-900 text-sm font-semibold hover:bg-amber-300"
+                        onClick={handleFocusPause}
+                      >
+                        Pauza
+                      </button>
+                    )}
+                    <button
+                      className="px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-200 hover:border-indigo-300"
+                      onClick={handleFocusReset}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
             <DailySummary
               tasks={tasks}
               showCompleted={showCompletedPanel}
@@ -470,7 +650,8 @@ function App() {
               onToggleTheme={() => updatePreference("theme", isDarkTheme ? "light" : "dark")}
             />
           </div>
-          <aside className="space-y-4">
+          {!preferences.focusMode && (
+            <aside className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
               {preferences.showWeather && (
                 <Weather weather={weather} location={location} setLocation={setLocation} />
@@ -478,7 +659,7 @@ function App() {
               {preferences.showQuote && <Quote />}
               {!preferences.showWeather && !preferences.showQuote && (
                 <div className="p-4 rounded-2xl bg-white dark:bg-zinc-800 border border-dashed text-sm text-gray-500 dark:text-gray-400">
-                  Panele pogody i cytatu są wyłączone w ustawieniach.
+                  Panele pogody i cytatu s wyczone w ustawieniach.
                 </div>
               )}
             </div>
@@ -533,7 +714,8 @@ function App() {
                 Dowiedz się więcej
               </button>
             </section>
-          </aside>
+            </aside>
+          )}
         </div>
       </main>
     </div>

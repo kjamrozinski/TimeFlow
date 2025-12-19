@@ -662,7 +662,7 @@ function TaskList({
   ).length;
 
   if (loading) {
-    return <div className="p-4 text-center">Ładowanie...</div>;
+    return <div className="p-4 text-center">adowanie...</div>;
   }
   if (error) {
     return <div className="p-4 text-center text-red-500">{error}</div>;

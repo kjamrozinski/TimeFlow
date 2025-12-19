@@ -43,12 +43,14 @@ db.serialize(() => {
       autoExpandCompleted INTEGER,
       defaultPriority TEXT,
       defaultType TEXT,
+      focusMode INTEGER,
       updatedAt TEXT
     )`
   );
 
   db.run('ALTER TABLE preferences ADD COLUMN defaultPriority TEXT', () => {});
   db.run('ALTER TABLE preferences ADD COLUMN defaultType TEXT', () => {});
+  db.run('ALTER TABLE preferences ADD COLUMN focusMode INTEGER', () => {});
 
 });
 

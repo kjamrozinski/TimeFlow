@@ -22,8 +22,8 @@ const DailySummary = ({ tasks }) => {
     done === all
       ? "100% wykonane!"
       : done === 0
-      ? "Czas wystartować!"
-      : "Dobry progres, jeszcze trochę!";
+    ? "Czas wystartował!"
+      : "Dobry progres, jeszcze troch!";
 
   return (
     <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/70 rounded-2xl shadow space-y-3 text-green-900 dark:text-green-100">
@@ -51,14 +51,14 @@ const DailySummary = ({ tasks }) => {
           </p>
           {nextDeadlineTask ? (
             <p>
-              Najbliższy termin:{" "}
+              Najbliszy termin:{" "}
               <span className="font-semibold">
                 {nextDeadlineTask.content || nextDeadlineTask.text} (
                 {new Date(nextDeadlineTask.deadline).toLocaleDateString("pl-PL")})
               </span>
             </p>
           ) : (
-            <p>Brak zaplanowanych terminów.</p>
+            <p>Brak zaplanowanych terminw.</p>
           )}
           {recentCompleted.length > 0 && (
             <div>

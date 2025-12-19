@@ -22,7 +22,7 @@ function Topbar({ user, onLogout, theme, onToggleTheme }) {
           <button
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-sky-300 dark:hover:border-sky-500"
             onClick={onToggleTheme}
-            title="Przełącz motyw"
+            title="Przecz motyw"
             type="button"
           >
             {theme === "dark" ? <FiSun /> : <FiMoon />}

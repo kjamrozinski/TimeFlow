@@ -2,21 +2,21 @@ import React, { useEffect, useMemo, useState } from "react";
 
 const weatherCodeMap = {
   0: { label: "Bezchmurnie", emoji: "☀️" },
-  1: { label: "Słonecznie z chmurami", emoji: "🌤️" },
-  2: { label: "Zachmurzenie umiarkowane", emoji: "⛅" },
+  1: { label: "Słonecznie z chmurami", emoji: "⛅" },
+  2: { label: "Zachmurzenie umiarkowane", emoji: "🌤️" },
   3: { label: "Pełne zachmurzenie", emoji: "☁️" },
   45: { label: "Mgła", emoji: "🌫️" },
   48: { label: "Marznąca mgła", emoji: "🌫️" },
   51: { label: "Mżawka lekka", emoji: "🌦️" },
-  53: { label: "Mżawka", emoji: "🌧️" },
+  53: { label: "Mżawka", emoji: "🌦️" },
   55: { label: "Mżawka intensywna", emoji: "🌧️" },
-  61: { label: "Lekki deszcz", emoji: "🌦️" },
+  61: { label: "Lekki deszcz", emoji: "🌧️" },
   63: { label: "Deszcz", emoji: "🌧️" },
   65: { label: "Intensywny deszcz", emoji: "🌧️" },
   71: { label: "Lekki śnieg", emoji: "🌨️" },
   73: { label: "Śnieg", emoji: "🌨️" },
-  75: { label: "Intensywny śnieg", emoji: "❄️" },
-  77: { label: "Śnieg ziarnisty", emoji: "❄️" },
+  75: { label: "Intensywny śnieg", emoji: "🌨️" },
+  77: { label: "Śnieg ziarnisty", emoji: "🌨️" },
   80: { label: "Przelotne opady", emoji: "🌦️" },
   81: { label: "Umiarkowane przelotne opady", emoji: "🌦️" },
   82: { label: "Ulewa", emoji: "🌧️" },
@@ -30,30 +30,51 @@ const weatherCodeMap = {
 const hazardRules = [
   {
     label: "Silny wiatr",
+    emoji: "💨",
     check: (w) => w?.windspeed >= 50,
     description: "Zabezpiecz luźne przedmioty i uważaj na silne podmuchy.",
   },
   {
     label: "Upał",
+    emoji: "🥵",
     check: (w) => w?.temperature >= 30,
     description: "Pij dużo wody i ogranicz wysiłek w najgorętszych godzinach.",
   },
   {
     label: "Mróz",
+    emoji: "🥶",
     check: (w) => w?.temperature <= -5,
     description: "Ubierz dodatkowe warstwy i uważaj na oblodzenia.",
   },
   {
     label: "Intensywne opady",
+    emoji: "🌧️",
     check: (w) => [61, 63, 65, 80, 81, 82].includes(w?.weathercode),
     description: "Możliwa gorsza widoczność i śliskie nawierzchnie.",
   },
   {
     label: "Burza",
+    emoji: "⛈️",
     check: (w) => [95, 96, 99].includes(w?.weathercode),
     description: "Zachowaj ostrożność — możliwe wyładowania i grad.",
   },
 ];
+
+const windDirectionName = (deg) => {
+  if (deg == null || Number.isNaN(deg)) return null;
+  const directions = [
+    "Północny",
+    "Północno-wschodni",
+    "Wschodni",
+    "Południowo-wschodni",
+    "Południowy",
+    "Południowo-zachodni",
+    "Zachodni",
+    "Północno-zachodni",
+  ];
+  const index = Math.round(deg / 45) % 8;
+  return directions[index];
+};
 
 const Weather = ({ weather, location, setLocation }) => {
   const [city, setCity] = useState("");
@@ -119,7 +140,7 @@ const Weather = ({ weather, location, setLocation }) => {
   };
 
   const descriptor = weather
-    ? weatherCodeMap[weather.weathercode] || { label: "Aktualizacja pogody", emoji: "🌥️" }
+    ? weatherCodeMap[weather.weathercode] || { label: "Aktualizacja pogody", emoji: "⏳" }
     : null;
 
   const hazards = useMemo(() => {
@@ -153,10 +174,9 @@ const Weather = ({ weather, location, setLocation }) => {
       {
         label: "Wiatr",
         value: weather ? `${Math.round(weather.windspeed)} km/h` : "--",
-        detail:
-          weather?.winddirection != null
-            ? `Kierunek ${Math.round(weather.winddirection)}°`
-            : "Brak danych",
+        detail: weather?.winddirection != null
+          ? `Kierunek: ${windDirectionName(weather.winddirection)}`
+          : "Brak danych",
       },
     ],
     [weather]
@@ -177,7 +197,7 @@ const Weather = ({ weather, location, setLocation }) => {
             <h3 className="text-2xl font-semibold flex items-center gap-2 justify-center sm:justify-start">
               {descriptor ? (
                 <>
-                  <span>{descriptor.emoji}</span>
+                  <span aria-hidden="true">{descriptor.emoji}</span>
                   {descriptor.label}
                 </>
               ) : (
@@ -192,14 +212,16 @@ const Weather = ({ weather, location, setLocation }) => {
             )}
           </div>
           {weather ? (
-            <div className="text-right">
-              <p className="text-5xl font-bold leading-none">{Math.round(weather.temperature)}°</p>
-              <p className="text-sm text-white/70">Wiatr {Math.round(weather.windspeed)} km/h</p>
-              {weather.precipitation != null && (
-                <p className="text-xs text-white/60">
-                  Opady: {weather.precipitation.toFixed(1)} mm
-                </p>
-              )}
+            <div className="text-right space-y-1">
+              <p className="text-5xl font-bold leading-none">
+                {Math.round(weather.temperature)}°C
+              </p>
+              <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-white/70">
+                <span>Wiatr {Math.round(weather.windspeed)} km/h</span>
+                {weather.precipitation != null && (
+                  <span>• Opady: {weather.precipitation.toFixed(1)} mm</span>
+                )}
+              </div>
             </div>
           ) : (
             <div className="text-sm text-white/70">Pobieranie pogody...</div>
@@ -222,7 +244,7 @@ const Weather = ({ weather, location, setLocation }) => {
             <ul className="space-y-1 text-sm">
               {hazards.map((hazard) => (
                 <li key={hazard.label} className="flex items-start gap-2">
-                  <span>⚠️</span>
+                  <span aria-hidden="true">{hazard.emoji}</span>
                   <div>
                     <p className="font-semibold">{hazard.label}</p>
                     <p className="text-white/70 text-xs">{hazard.description}</p>
@@ -260,7 +282,8 @@ const Weather = ({ weather, location, setLocation }) => {
                       lon: pos.coords.longitude,
                     });
                   },
-                  () => alert("Nie udało się pobrać bieżącej lokalizacji.")
+                  () => alert("Nie udało się pobrać bieżącej lokalizacji."),
+                  { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
                 );
               }}
             >

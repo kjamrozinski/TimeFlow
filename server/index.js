@@ -333,6 +333,7 @@ app.get('/api/preferences/:nick', (req, res) => {
         autoExpandCompleted: false,
         defaultPriority: 'Low',
         defaultType: 'Inne',
+        focusMode: false,
         updatedAt: '',
       });
     }
@@ -344,6 +345,7 @@ app.get('/api/preferences/:nick', (req, res) => {
       autoExpandCompleted: !!row.autoExpandCompleted,
       defaultPriority: row.defaultPriority || 'Low',
       defaultType: row.defaultType || 'Inne',
+      focusMode: !!row.focusMode,
       updatedAt: row.updatedAt || '',
     });
   });
@@ -364,14 +366,15 @@ app.put('/api/preferences/:nick', (req, res) => {
   const autoExpandCompleted = normalizeBoolean(req.body?.autoExpandCompleted, false);
   const defaultPriority = normalizePriority(req.body?.defaultPriority) || 'Low';
   const defaultType = normalizeType(req.body?.defaultType) || 'Inne';
+  const focusMode = normalizeBoolean(req.body?.focusMode, false);
   const updatedAt = new Date().toISOString();
 
   db.get('SELECT id FROM preferences WHERE nick = ?', [nick], (err, row) => {
     if (err) return res.status(500).json({ error: 'Blad serwera' });
     if (!row) {
       db.run(
-        `INSERT INTO preferences (nick, theme, showWeather, showQuote, autoExpandCompleted, defaultPriority, defaultType, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO preferences (nick, theme, showWeather, showQuote, autoExpandCompleted, defaultPriority, defaultType, focusMode, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           nick,
           theme,
@@ -380,6 +383,7 @@ app.put('/api/preferences/:nick', (req, res) => {
           autoExpandCompleted ? 1 : 0,
           defaultPriority,
           defaultType,
+          focusMode ? 1 : 0,
           updatedAt,
         ],
         (insertErr) => {
@@ -392,6 +396,7 @@ app.put('/api/preferences/:nick', (req, res) => {
             autoExpandCompleted,
             defaultPriority,
             defaultType,
+            focusMode,
             updatedAt,
           });
         }
@@ -401,7 +406,7 @@ app.put('/api/preferences/:nick', (req, res) => {
 
     db.run(
       `UPDATE preferences
-       SET theme = ?, showWeather = ?, showQuote = ?, autoExpandCompleted = ?, defaultPriority = ?, defaultType = ?, updatedAt = ?
+       SET theme = ?, showWeather = ?, showQuote = ?, autoExpandCompleted = ?, defaultPriority = ?, defaultType = ?, focusMode = ?, updatedAt = ?
        WHERE nick = ?`,
       [
         theme,
@@ -410,6 +415,7 @@ app.put('/api/preferences/:nick', (req, res) => {
         autoExpandCompleted ? 1 : 0,
         defaultPriority,
         defaultType,
+        focusMode ? 1 : 0,
         updatedAt,
         nick,
       ],
@@ -423,6 +429,7 @@ app.put('/api/preferences/:nick', (req, res) => {
           autoExpandCompleted,
           defaultPriority,
           defaultType,
+          focusMode,
           updatedAt,
         });
       }

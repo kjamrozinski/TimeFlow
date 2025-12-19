@@ -12,7 +12,9 @@ function UserDashboard({ user }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Witaj ponownie, {user?.name || "Użytkowniku"}!</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Witaj ponownie, {user?.name || "Użytkowniku"}!
+        </p>
         <h1 className="text-2xl font-bold">Panel użytkownika</h1>
       </div>
 
@@ -41,16 +43,16 @@ function UserDashboard({ user }) {
             <h2 className="text-lg font-semibold">Szybki podgląd</h2>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Tu pojawią się wykresy postępu, aktywności i obciążenia czasowego. W tej chwili to placeholder,
-            który pozwoli zaprojektować docelowe widgety.
+            Tu pojawią się wykresy postępu, aktywności i obciążenia czasowego. W tej chwili to
+            placeholder, który pozwoli zaprojektować docelowe widgety.
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
           <h3 className="text-lg font-semibold mb-2">Nadchodzące</h3>
           <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <li>• Warsztat projektowy – jutro, 10:00</li>
-            <li>• Review sprintu – piątek, 14:00</li>
-            <li>• Plan sprintu – poniedziałek, 9:00</li>
+            <li>Warsztat projektowy — jutro, 10:00</li>
+            <li>Review sprintu — piątek, 14:00</li>
+            <li>Plan sprintu — poniedziałek, 9:00</li>
           </ul>
         </div>
       </div>

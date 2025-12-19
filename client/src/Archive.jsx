@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 const typeColors = {
   Praca: "bg-blue-100 text-blue-800",
@@ -21,8 +21,6 @@ const sortOptions = [
   { value: "alphaAsc", label: "Alfabetycznie A–Z" },
   { value: "alphaDesc", label: "Alfabetycznie Z–A" },
 ];
-
-const priorityRank = { Low: 1, Medium: 2, High: 3 };
 
 const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -123,18 +121,6 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
         ))}
       </div>
     );
-  };
-
-  const handleRestoreClick = (taskId) => {
-    if (onRestore) {
-      onRestore(taskId);
-    }
-  };
-
-  const handleDeleteClick = (taskId) => {
-    if (onDelete) {
-      onDelete(taskId);
-    }
   };
 
   const exportToCsv = () => {
@@ -317,13 +303,13 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-                    onClick={() => handleRestoreClick(task.id)}
+                    onClick={() => onRestore && onRestore(task.id)}
                   >
                     Przywróć
                   </button>
                   <button
                     className="px-4 py-2 rounded bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-100"
-                    onClick={() => handleDeleteClick(task.id)}
+                    onClick={() => onDelete && onDelete(task.id)}
                   >
                     Usuń z archiwum
                   </button>

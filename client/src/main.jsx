@@ -17,12 +17,12 @@ ReactDOM.createRoot(rootElement).render(
 
 registerSW({
   onNeedRefresh() {
-    if (confirm("Nowa wersja dostÄ™pna. OdĹ›wieĹĽyÄ‡?")) {
+    if (confirm("Nowa wersja dostępna. Odświeżyć?")) {
       window.location.reload();
     }
   },
   onOfflineReady() {
-    console.log("DziaĹ‚a offline âś…");
+    console.log("Działa offline ✅");
   },
 });
 
