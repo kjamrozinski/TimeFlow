@@ -6,6 +6,11 @@ const API_URL =
   process.env.REACT_APP_API_URL ||
   "http://localhost:5000";
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("timeflow_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const typeColors = {
   Praca: "bg-blue-100 text-blue-800",
   Nauka: "bg-green-100 text-green-800",
@@ -21,14 +26,14 @@ const priorityLabels = {
   High: "Wysoki",
 };
 
-const emptyTask = {
+const createEmptyTask = (defaultPriority = "Low", defaultType = "Inne") => ({
   content: "",
   description: "",
   deadline: "",
-  priority: "Low",
+  priority: defaultPriority || "Low",
   tags: "",
-  type: "Inne",
-};
+  type: defaultType || "Inne",
+});
 
 const normalizeTags = (tags) =>
   tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
@@ -496,6 +501,8 @@ function TaskList({
   showCompleted = false,
   onToggleCompleted = () => {},
   theme = "light",
+  defaultPriority = "Low",
+  defaultType = "Inne",
   onToggleTheme = () => {},
 }) {
   const [loading, setLoading] = useState(true);
@@ -505,13 +512,26 @@ function TaskList({
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterDate, setFilterDate] = useState("");
 
-  const [newTask, setNewTask] = useState(emptyTask);
+  const [newTask, setNewTask] = useState(() => createEmptyTask(defaultPriority, defaultType));
+
+  useEffect(() => {
+    const isPristine =
+      !newTask.content &&
+      !newTask.description &&
+      !newTask.deadline &&
+      !newTask.tags &&
+      (newTask.priority === "Low" || newTask.priority === defaultPriority) &&
+      (newTask.type === "Inne" || newTask.type === defaultType);
+    if (isPristine) {
+      setNewTask(createEmptyTask(defaultPriority, defaultType));
+    }
+  }, [defaultPriority, defaultType]);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     axios
-      .get(`${API_URL}/api/tasks/${userNick}`)
+      .get(`${API_URL}/api/tasks/${userNick}`, { headers: getAuthHeaders() })
       .then((res) => {
         if (!mounted) return;
         setTasks(res.data || []);
@@ -539,14 +559,14 @@ function TaskList({
       type: newTask.type,
     };
     axios
-      .post(`${API_URL}/api/tasks`, taskData)
+      .post(`${API_URL}/api/tasks`, taskData, { headers: getAuthHeaders() })
       .then((res) => {
         const createdTask = res.data;
         if (createdTask) {
           setTasks((prev) => [...prev, createdTask]);
         } else {
           return axios
-            .get(`${API_URL}/api/tasks/${userNick}`)
+            .get(`${API_URL}/api/tasks/${userNick}`, { headers: getAuthHeaders() })
             .then((r) => setTasks(r.data || []));
         }
       })
@@ -555,13 +575,13 @@ function TaskList({
         setError("Nie udało się dodać zadania.");
       })
       .finally(() => {
-        setNewTask(emptyTask);
+        setNewTask(createEmptyTask(defaultPriority, defaultType));
       });
   };
 
   const handleUpdateTask = (id, updatedFields) => {
     axios
-      .put(`${API_URL}/api/tasks/${id}`, updatedFields)
+      .put(`${API_URL}/api/tasks/${id}`, updatedFields, { headers: getAuthHeaders() })
       .then(() => {
         setTasks((prev) =>
           prev.map((task) => (task.id === id ? { ...task, ...updatedFields } : task))
@@ -576,7 +596,7 @@ function TaskList({
   const handleDeleteTask = (id) => {
     const taskToDelete = tasks.find((t) => t.id === id);
     axios
-      .delete(`${API_URL}/api/tasks/${id}`)
+      .delete(`${API_URL}/api/tasks/${id}`, { headers: getAuthHeaders() })
       .then(() => {
         setTasks((prev) => prev.filter((task) => task.id !== id));
         if (taskToDelete) {

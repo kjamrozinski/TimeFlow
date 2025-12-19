@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 
 const Settings = ({ user, onBack, preferences, onUpdatePreferences }) => {
   const [nick, setNick] = useState(user.nick || "");
@@ -46,7 +46,7 @@ const Settings = ({ user, onBack, preferences, onUpdatePreferences }) => {
               <span className="text-sm text-gray-600 dark:text-gray-300">Nick</span>
               <input
                 type="text"
-                className="w-full mt-1 p-2 rounded border bg-white dark:bg-slate-800"
+                className="w-full mt-1 p-2 rounded border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 value={nick}
                 onChange={(e) => setNick(e.target.value)}
               />
@@ -102,6 +102,35 @@ const Settings = ({ user, onBack, preferences, onUpdatePreferences }) => {
                 <span className="text-sm">{item.label}</span>
               </label>
             ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 dark:text-gray-300">Domyślny priorytet</p>
+              <select
+                className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                value={preferences.defaultPriority || "Low"}
+                onChange={(e) => onUpdatePreferences("defaultPriority", e.target.value)}
+              >
+                <option value="Low">Niski</option>
+                <option value="Medium">Średni</option>
+                <option value="High">Wysoki</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 dark:text-gray-300">Domyślny typ zadania</p>
+              <select
+                className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                value={preferences.defaultType || "Inne"}
+                onChange={(e) => onUpdatePreferences("defaultType", e.target.value)}
+              >
+                <option value="Praca">Praca</option>
+                <option value="Nauka">Nauka</option>
+                <option value="Relaks">Relaks</option>
+                <option value="Sport">Sport</option>
+                <option value="Spotkania">Spotkania</option>
+                <option value="Inne">Inne</option>
+              </select>
+            </div>
           </div>
         </section>
 

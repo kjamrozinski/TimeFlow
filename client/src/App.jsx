@@ -9,22 +9,31 @@ import Quote from "./Quote";
 import DailySummary from "./DailySummary";
 import { FiCloud } from "react-icons/fi";
 import LoginPage from "./LoginPage";
+import ProfilePage from "./ProfilePage";
+import WeekView from "./WeekView";
 
 const API_URL =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
   process.env.REACT_APP_API_URL ||
   "http://localhost:5000";
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("timeflow_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const defaultPreferences = {
   theme: "light",
   showWeather: true,
   showQuote: true,
   autoExpandCompleted: false,
+  defaultPriority: "Low",
+  defaultType: "Inne",
 };
 
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState("login"); // login/register/reset/dashboard/settings/archive
+  const [view, setView] = useState("login"); // login/register/reset/dashboard/settings/archive/profile/week
   const [tasks, setTasks] = useState([]);
   const [archive, setArchive] = useState([]);
   const [location, setLocation] = useState(null);
@@ -44,6 +53,18 @@ function App() {
     localStorage.setItem("timeflow_preferences", JSON.stringify(preferences));
     document.documentElement.classList.toggle("dark", preferences.theme === "dark");
   }, [preferences]);
+
+  const persistPreferences = (nextPreferences) => {
+    if (!user?.nick) return;
+    fetch(`${API_URL}/api/preferences/${encodeURIComponent(user.nick)}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(nextPreferences),
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     const applyTheme = (theme) => {
@@ -73,16 +94,49 @@ function App() {
       if (prev.autoExpandCompleted === showCompletedPanel) {
         return prev;
       }
-      return { ...prev, autoExpandCompleted: showCompletedPanel };
+      const next = { ...prev, autoExpandCompleted: showCompletedPanel };
+      persistPreferences(next);
+      return next;
     });
   }, [showCompletedPanel]);
 
   const updatePreference = (key, value) => {
-    setPreferences((prev) => ({ ...prev, [key]: value }));
+    setPreferences((prev) => {
+      const next = { ...prev, [key]: value };
+      persistPreferences(next);
+      return next;
+    });
     if (key === "autoExpandCompleted") {
       setShowCompletedPanel(!!value);
     }
   };
+
+  useEffect(() => {
+    if (!user?.nick) return;
+    fetch(`${API_URL}/api/preferences/${encodeURIComponent(user.nick)}`, {
+      headers: getAuthHeaders(),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Preferences fetch failed");
+        return res.json();
+      })
+      .then((data) => {
+        setPreferences((prev) => ({
+          ...prev,
+          theme: data.theme || prev.theme,
+          showWeather: typeof data.showWeather === "boolean" ? data.showWeather : prev.showWeather,
+          showQuote: typeof data.showQuote === "boolean" ? data.showQuote : prev.showQuote,
+          autoExpandCompleted:
+            typeof data.autoExpandCompleted === "boolean"
+              ? data.autoExpandCompleted
+              : prev.autoExpandCompleted,
+          defaultPriority: data.defaultPriority || prev.defaultPriority,
+          defaultType: data.defaultType || prev.defaultType,
+        }));
+        setShowCompletedPanel(!!data.autoExpandCompleted);
+      })
+      .catch(() => {});
+  }, [user?.nick]);
 
   // Sprawdzaj lokalizację co 10 minut
   useEffect(() => {
@@ -165,6 +219,11 @@ function App() {
 
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (data?.token) {
+          localStorage.setItem("timeflow_token", data.token);
+        } else {
+          localStorage.removeItem("timeflow_token");
+        }
         setUser({ nick: data.nick || nickValue, role: data.role || chosenRole });
         setView("dashboard");
         return;
@@ -174,6 +233,7 @@ function App() {
     }
 
     // Fallback mock (gdy API jest niedostępne lub zwraca błąd)
+    localStorage.removeItem("timeflow_token");
     setUser({ nick: nickValue, role: chosenRole });
     setView("dashboard");
   };
@@ -192,6 +252,11 @@ function App() {
       }
 
       const data = await res.json();
+      if (data?.token) {
+        localStorage.setItem("timeflow_token", data.token);
+      } else {
+        localStorage.removeItem("timeflow_token");
+      }
       setUser({ nick: data.nick, role: data.role || "user" });
       setView("dashboard");
     } catch (err) {
@@ -212,11 +277,16 @@ function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("timeflow_token");
     setUser(null);
     setView("login");
     setTasks([]);
     setArchive([]);
     setShowCompletedPanel(false);
+  };
+
+  const handleProfileUpdate = (updates) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
   };
 
   const handleRestoreTask = (taskId) => {
@@ -287,6 +357,21 @@ function App() {
         onUpdatePreferences={updatePreference}
       />
     );
+  if (view === "profile")
+    return (
+      <ProfilePage
+        user={user}
+        onBack={() => setView("dashboard")}
+        onUpdate={handleProfileUpdate}
+      />
+    );
+  if (view === "week")
+    return (
+      <WeekView
+        tasks={tasks}
+        onBack={() => setView("dashboard")}
+      />
+    );
   if (view === "archive") {
     return (
       <Archive
@@ -333,6 +418,18 @@ function App() {
           <nav className="flex flex-wrap justify-center gap-3 text-sm">
             <button
               className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60"
+              onClick={() => setView("profile")}
+            >
+              Profil
+            </button>
+            <button
+              className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60"
+              onClick={() => setView("week")}
+            >
+              Historia
+            </button>
+            <button
+              className="px-4 py-2 border border-white/40 dark:border-slate-700 rounded-full backdrop-blur bg-white/70 dark:bg-slate-900/60"
               onClick={() => setView("settings")}
             >
               Ustawienia
@@ -368,6 +465,8 @@ function App() {
               showCompleted={showCompletedPanel}
               onToggleCompleted={() => setShowCompletedPanel((prev) => !prev)}
               theme={preferences.theme}
+              defaultPriority={preferences.defaultPriority}
+              defaultType={preferences.defaultType}
               onToggleTheme={() => updatePreference("theme", isDarkTheme ? "light" : "dark")}
             />
           </div>

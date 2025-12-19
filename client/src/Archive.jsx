@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 
 const typeColors = {
   Praca: "bg-blue-100 text-blue-800",
@@ -9,10 +9,26 @@ const typeColors = {
   Inne: "bg-gray-200 text-gray-800",
 };
 
+const priorityLabels = {
+  Low: "Niski",
+  Medium: "Średni",
+  High: "Wysoki",
+};
+
+const sortOptions = [
+  { value: "deadlineDesc", label: "Termin: najnowsze" },
+  { value: "deadlineAsc", label: "Termin: najstarsze" },
+  { value: "alphaAsc", label: "Alfabetycznie A–Z" },
+  { value: "alphaDesc", label: "Alfabetycznie Z–A" },
+];
+
+const priorityRank = { Low: 1, Medium: 2, High: 3 };
+
 const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("deadlineDesc");
 
   const stats = useMemo(() => {
     const total = archive.length;
@@ -35,24 +51,50 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
   }, [archive]);
 
   const availableTypes = useMemo(() => {
-    return ["All", ...Array.from(new Set(archive.map((task) => task.type || "Inne")))];
+    const baseTypes = ["Praca", "Nauka", "Relaks", "Sport", "Spotkania", "Inne"];
+    const fromArchive = Array.from(new Set(archive.map((task) => task.type || "Inne")));
+    return ["All", ...Array.from(new Set([...baseTypes, ...fromArchive]))];
   }, [archive]);
 
   const availablePriorities = ["All", "Low", "Medium", "High"];
 
-  const filteredArchive = archive.filter((task) => {
-    const text = `${task.content || task.text || ""} ${task.description || ""}`.toLowerCase();
-    const matchesSearch = text.includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === "All" || (task.type || "Inne") === typeFilter;
-    const matchesPriority = priorityFilter === "All" || (task.priority || "Low") === priorityFilter;
-    return matchesSearch && matchesType && matchesPriority;
-  });
+  const filteredArchive = useMemo(() => {
+    return archive.filter((task) => {
+      const text = `${task.content || task.text || ""} ${task.description || ""}`.toLowerCase();
+      const matchesSearch = text.includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === "All" || (task.type || "Inne") === typeFilter;
+      const matchesPriority = priorityFilter === "All" || (task.priority || "Low") === priorityFilter;
+      return matchesSearch && matchesType && matchesPriority;
+    });
+  }, [archive, searchTerm, typeFilter, priorityFilter]);
+
+  const sortedArchive = useMemo(() => {
+    const list = [...filteredArchive];
+    const getDeadline = (task) => (task.deadline ? new Date(task.deadline).getTime() : 0);
+    const getTitle = (task) => (task.content || task.text || "").toLowerCase();
+
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "deadlineAsc":
+          return getDeadline(a) - getDeadline(b);
+        case "deadlineDesc":
+          return getDeadline(b) - getDeadline(a);
+        case "alphaDesc":
+          return getTitle(b).localeCompare(getTitle(a));
+        case "alphaAsc":
+        default:
+          return getTitle(a).localeCompare(getTitle(b));
+      }
+    });
+
+    return list;
+  }, [filteredArchive, sortBy]);
 
   const formatDate = (value) => {
     if (!value) return "Brak";
     try {
       return new Date(value).toLocaleDateString("pl-PL");
-    } catch (err) {
+    } catch (_err) {
       return value;
     }
   };
@@ -95,6 +137,38 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
     }
   };
 
+  const exportToCsv = () => {
+    if (sortedArchive.length === 0) return;
+    const headers = ["Treść", "Opis", "Termin", "Priorytet", "Typ", "Tagi", "Status"];
+    const rows = sortedArchive.map((task) => {
+      const tags = Array.isArray(task.tags)
+        ? task.tags.join(", ")
+        : task.tags
+        ? String(task.tags)
+        : "";
+      const status = task.completed ? "Zakończone" : "Nieukończone";
+      const values = [
+        task.content || task.text || "",
+        task.description || "",
+        formatDate(task.deadline),
+        priorityLabels[task.priority] || task.priority || "Niski",
+        task.type || "Inne",
+        tags,
+        status,
+      ];
+      return values.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",");
+    });
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "timeflow-archiwum.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 p-6 transition-colors">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -111,6 +185,13 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
               onClick={onBack}
             >
               Powrót do zadań
+            </button>
+            <button
+              className="px-4 py-2 rounded-full bg-emerald-500 text-white font-semibold shadow disabled:bg-emerald-900 disabled:text-gray-300"
+              disabled={!archive.length}
+              onClick={exportToCsv}
+            >
+              Eksportuj CSV
             </button>
             <button
               className="px-4 py-2 rounded-full bg-green-500 text-white font-semibold shadow disabled:bg-green-900 disabled:text-gray-300"
@@ -138,7 +219,7 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
 
         <section className="bg-white dark:bg-zinc-800 rounded-2xl shadow p-4 space-y-4">
           <h2 className="font-semibold text-lg">Filtry</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm mb-1">Wyszukiwanie</label>
               <input
@@ -146,7 +227,7 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Szukaj po treści lub opisie..."
-                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600"
+                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600 text-slate-900 dark:text-slate-100"
               />
             </div>
             <div>
@@ -154,7 +235,7 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600"
+                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600 text-slate-900 dark:text-slate-100"
               >
                 {availableTypes.map((type) => (
                   <option key={type} value={type}>
@@ -168,7 +249,7 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
-                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600"
+                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600 text-slate-900 dark:text-slate-100"
               >
                 {availablePriorities.map((priority) => (
                   <option key={priority} value={priority}>
@@ -183,16 +264,30 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
                 ))}
               </select>
             </div>
+            <div>
+              <label className="block text-sm mb-1">Sortowanie</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full p-2 rounded border bg-white dark:bg-zinc-700 dark:border-zinc-600 text-slate-900 dark:text-slate-100"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </section>
 
         <section className="space-y-3">
-          {filteredArchive.length === 0 && (
+          {sortedArchive.length === 0 && (
             <div className="text-center text-gray-500 dark:text-gray-400 py-10 border border-dashed rounded-2xl">
               Brak zadań spełniających kryteria wyszukiwania.
             </div>
           )}
-          {filteredArchive.map((task) => (
+          {sortedArchive.map((task) => (
             <article
               key={task.id || `${task.content}-${task.deadline}`}
               className="bg-white dark:bg-zinc-800 rounded-2xl shadow p-4 border border-gray-100 dark:border-zinc-700"
@@ -213,7 +308,7 @@ const Archive = ({ archive, onBack, onRestore, onRestoreAll, onDelete, onClear }
                     <p className="text-sm text-gray-600 dark:text-gray-300">{task.description}</p>
                   )}
                   <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1">
-                    <div>Priorytet: {task.priority || "Low"}</div>
+                    <div>Priorytet: {priorityLabels[task.priority] || task.priority || "Niski"}</div>
                     <div>Termin: {formatDate(task.deadline)}</div>
                     <div>Status: {task.completed ? "Zakończone" : "Nieukończone"}</div>
                   </div>
