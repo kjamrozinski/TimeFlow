@@ -13,6 +13,7 @@ client – frontend
 server – backend
 
 Do uruchomienia wymagane są dwa terminale:
+
 Klonowanie repozytorium:
 
 git clone 
