@@ -12,7 +12,7 @@ Projekt składa się z dwóch części:
 client – frontend
 server – backend
 
-Do uruchomienia wymagane są dwa terminale:
+Do uruchomienia wymagane są dwa terminale.
 
 Klonowanie repozytorium:
 
