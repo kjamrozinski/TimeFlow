@@ -56,4 +56,5 @@ backend – tryb developerski
 
 AUTOR:
 Projekt wykonany w ramach pracy inżynierskiej. 
+
 Autor: Kacper Jamroziński
