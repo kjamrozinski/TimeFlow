@@ -54,7 +54,7 @@ Projekt uruchamiany jest w trybie developerskim:
 frontend – hot reload (Vite) 
 backend – tryb developerski
 
-AUTOR:
+
 Projekt wykonany w ramach pracy inżynierskiej. 
 
 Autor: Kacper Jamroziński
