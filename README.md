@@ -16,7 +16,7 @@ Do uruchomienia wymagane są dwa terminale:
 Klonowanie repozytorium:
 
 git clone 
-https://github.com/ReXxX-69/TimeFlow.git 
+https://github.com/kjamrozinski/TimeFlow.git 
 cd TimeFlow
 
 Uruchomienie backendu:
